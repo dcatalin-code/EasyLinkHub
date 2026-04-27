@@ -1,6 +1,58 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useLanguage } from "../i18n/LanguageContext";
+
+const CLIENT_TEXT = {
+  manual: "Manual",
+  name: "Name",
+  status: "Status",
+  updated: "Updated",
+  tag: "Tag",
+  tagWithValue: "Tag: {{value}}",
+  column: "Column",
+  columnWithValue: "Column: {{value}}",
+  sort: "Sort",
+  typeTag: "Type a tag...",
+  add: "Add",
+  suggestions: "Suggestions",
+  current: "Current",
+  nextmonth: "Next month",
+  "tag presence": "Tag presence",
+  direction: "Direction",
+  "choose tag": "Choose tag",
+  "Choose column": "Choose column",
+  "Client deleted": "Client deleted",
+  "Delete client": "Delete client",
+  Delete: "Delete",
+  Client: "Client",
+  "Client duplicated": "Client duplicated",
+  "Client added": "Client added",
+  "Column added": "Column added",
+  addClient: "Add client",
+  addColumn: "Add column",
+  search: "Search...",
+  hideArchived: "Hide archived",
+  showArchived: "Show archived",
+  shown: "shown",
+  tags: "Tags",
+  notes: "Notes",
+  actions: "Actions",
+  Name: "Name",
+  notesPlaceholder: "Notes...",
+  "column name": "Column name",
+  type: "Type",
+  "add client": "Add client",
+  Remove: "Remove",
+  "Click to remove": "Click to remove",
+};
+
+function txt(key, vars = {}) {
+  let value = CLIENT_TEXT[key] || key;
+  Object.keys(vars).forEach((name) => {
+    value = value.replace(`{{${name}}}`, vars[name]);
+  });
+  return value;
+}
+
 
 function uid() {
   try {
@@ -116,7 +168,6 @@ function IconMinus({ size = 16 }) {
 }
 
 function useOutsidePointerDown(refs, onOutside, enabled) {
-  const { t } = useLanguage();
   useEffect(() => {
     if (!enabled) return;
     const onDown = (e) => {
@@ -133,7 +184,6 @@ function useOutsidePointerDown(refs, onOutside, enabled) {
 }
 
 function Popover({ open, anchorRef, onClose, children, width = 260, maxHeight = 340, className = "" }) {
-  const { t } = useLanguage();
   const menuRef = useRef(null);
   const [pos, setPos] = useState({ x: 0, y: 0, w: width });
 
@@ -206,7 +256,6 @@ function Cb({ checked, onChange, title, ariaLabel }) {
 }
 
 function AutoTextarea({ value, onChange, placeholder }) {
-  const { t } = useLanguage();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -230,7 +279,6 @@ function AutoTextarea({ value, onChange, placeholder }) {
 }
 
 function StatusSelect({ value, options, statusMap, onChange, width = 170 }) {
-  const { t } = useLanguage();
   const btnRef = useRef(null);
   const [open, setOpen] = useState(false);
 
@@ -285,7 +333,6 @@ function StatusSelect({ value, options, statusMap, onChange, width = 170 }) {
 }
 
 function TagsEditor({ tags, allTags, onChange }) {
-  const { t } = useLanguage();
   const btnRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -322,7 +369,7 @@ function TagsEditor({ tags, allTags, onChange }) {
         {(tags || []).map((t) => (
           <span key={t} className="crmTagChip" title={t}>
             <span className="crmTagText">{t}</span>
-            <button type="button" className="crmTagX" onClick={() => removeTag(t)} aria-label={t("Remove")}>
+            <button type="button" className="crmTagX" onClick={() => removeTag(t)} aria-label={txt("Remove")}>
               ✕
             </button>
           </span>
@@ -335,7 +382,7 @@ function TagsEditor({ tags, allTags, onChange }) {
           aria-haspopup="dialog"
           aria-expanded={open}
         >
-          + {t("tag")}
+          + {txt("tag")}
           <span aria-hidden="true" style={{ display: "inline-flex", opacity: 0.9 }}>
             <IconChevronDown size={14} />
           </span>
@@ -349,7 +396,7 @@ function TagsEditor({ tags, allTags, onChange }) {
               className="input"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={t("typeTag")}
+              placeholder={txt("typeTag")}
               style={{ width: "100%" }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -366,13 +413,13 @@ function TagsEditor({ tags, allTags, onChange }) {
               onClick={() => addTag(q)}
               style={{ padding: "10px 12px", borderRadius: 12 }}
             >
-             + {t("add")}
+             + {txt("add")}
             </button>
           </div>
 
           {suggestions.length > 0 && (
             <div style={{ marginTop: 10 }}>
-              <div className="crmHint">{t("suggestions")}</div>
+              <div className="crmHint">{txt("suggestions")}</div>
               <div className="crmSugList">
                 {suggestions.map((t) => (
                   <button key={t} type="button" className="crmSug" onClick={() => addTag(t)}>
@@ -385,10 +432,10 @@ function TagsEditor({ tags, allTags, onChange }) {
 
           {(tags || []).length > 0 && (
             <div style={{ marginTop: 12 }}>
-              <div className="crmHint">{t("current")}</div>
+              <div className="crmHint">{txt("current")}</div>
               <div className="crmSugList">
                 {(tags || []).map((t) => (
-                  <button key={t} type="button" className="crmSug crmSugOn" onClick={() => removeTag(t)} title={t("Click to remove")}>
+                  <button key={t} type="button" className="crmSug crmSugOn" onClick={() => removeTag(t)} title={txt("Click to remove")}>
                     {t}
                     <span style={{ marginLeft: 6, opacity: 0.75 }}>✕</span>
                   </button>
@@ -551,7 +598,7 @@ function DatePicker({ value, onChange, width = 240 }) {
               <button
                 className="iconBtn"
                 type="button"
-                title={t("nextmonth")}
+                title={txt("nextmonth")}
                 onClick={() => {
                   const d = new Date(y, m0, 1);
                   d.setMonth(d.getMonth() + 1);
@@ -716,38 +763,37 @@ function reorderWithPos(setData, dragId, dropId, pos) {
   });
 }
 
-function sortLabel(sortMode, tagSort, columns, t) {
-  if (!sortMode || !sortMode.type) return t("manual");
+function sortLabel(sortMode, tagSort, columns) {
+  if (!sortMode || !sortMode.type) return txt("manual");
 
-  if (sortMode.type === "Manual") return t("manual");
-  if (sortMode.type === "Name") return t("name");
-  if (sortMode.type === "Status") return t("status");
-  if (sortMode.type === "Updated") return t("updated");
+  if (sortMode.type === "Manual") return txt("manual");
+  if (sortMode.type === "Name") return txt("name");
+  if (sortMode.type === "Status") return txt("status");
+  if (sortMode.type === "Updated") return txt("updated");
 
   if (sortMode.type === "Tag") {
     return tagSort
-      ? t("tagWithValue", { value: tagSort })
-      : t("tag");
+      ? txt("tagWithValue", { value: tagSort })
+      : txt("tag");
   }
 
   if (sortMode.type === "Column") {
     const col = (columns || []).find((c) => c.id === sortMode.key);
 
     return col?.name
-      ? t("columnWithValue", { value: col.name })
-      : t("column");
+      ? txt("columnWithValue", { value: col.name })
+      : txt("column");
   }
 
-  return t(sortMode.type.toLowerCase());
+  return txt(sortMode.type.toLowerCase());
 }
 
 function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns }) {
-  const { t } = useLanguage();
   const btnRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState("root"); // root | tag | col
 
-  const label = sortLabel(sortMode, tagSort, columns, t) || "";
+  const label = sortLabel(sortMode, tagSort, columns) || "";
 
   function chooseType(type) {
     if (type === "Column" && columns.length && !sortMode.key) {
@@ -773,7 +819,7 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
         aria-expanded={open}
       >
         <IconSort size={16} />
-        {t("sort")}
+        {txt("sort")}
         <span className="crmSortMeta">{label}</span>
         <IconChevronDown size={16} />
       </button>
@@ -793,19 +839,19 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
         {view === "root" && (
           <>
             <button className={"crmMenuItem" + (sortMode.type === "Manual" ? " isSelected" : "")} type="button" onClick={() => { chooseType("Manual"); setOpen(false); }}>
-              <span className="crmMenuLeft"><span>{t("manual")}</span></span>
+              <span className="crmMenuLeft"><span>{txt("manual")}</span></span>
               <span className="crmMenuRight">{sortMode.type === "Manual" ? "✓" : ""}</span>
             </button>
             <button className={"crmMenuItem" + (sortMode.type === "Name" ? " isSelected" : "")} type="button" onClick={() => { chooseType("Name"); setOpen(false); }}>
-              <span className="crmMenuLeft"><span>{t("name")}</span></span>
+              <span className="crmMenuLeft"><span>{txt("name")}</span></span>
               <span className="crmMenuRight">{sortMode.type === "Name" ? "✓" : ""}</span>
             </button>
             <button className={"crmMenuItem" + (sortMode.type === "Status" ? " isSelected" : "")} type="button" onClick={() => { chooseType("Status"); setOpen(false); }}>
-              <span className="crmMenuLeft"><span>{t("status")}</span></span>
+              <span className="crmMenuLeft"><span>{txt("status")}</span></span>
               <span className="crmMenuRight">{sortMode.type === "Status" ? "✓" : ""}</span>
             </button>
             <button className={"crmMenuItem" + (sortMode.type === "Updated" ? " isSelected" : "")} type="button" onClick={() => { chooseType("Updated"); setOpen(false); }}>
-              <span className="crmMenuLeft"><span>{t("updated")}</span></span>
+              <span className="crmMenuLeft"><span>{txt("updated")}</span></span>
               <span className="crmMenuRight">{sortMode.type === "Updated" ? "✓" : ""}</span>
             </button>
 
@@ -819,7 +865,7 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
                   setView("tag");
                 }}
               >
-                <span className="crmMenuLeft"><span>{t("tag presence")}</span></span>
+                <span className="crmMenuLeft"><span>{txt("tag presence")}</span></span>
                 <span className="crmMenuRight">→</span>
               </button>
             )}
@@ -833,14 +879,14 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
                   setView("col");
                 }}
               >
-                <span className="crmMenuLeft"><span>{t("column")}</span></span>
+                <span className="crmMenuLeft"><span>{txt("column")}</span></span>
                 <span className="crmMenuRight">→</span>
               </button>
             )}
 
             {canDir && (
               <div className="crmMenuSection">
-                <div className="crmHint">{t("direction")}</div>
+                <div className="crmHint">{txt("direction")}</div>
                 <div className="crmDirRow">
                   <button
                     className={"crmDirBtn" + (sortMode.dir !== "desc" ? " isOn" : "")}
@@ -864,7 +910,7 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
 
         {view === "tag" && (
           <div style={{ padding: 6 }}>
-            <div className="crmHint">{t("choose tag")}</div>
+            <div className="crmHint">{txt("choose tag")}</div>
             <div className="crmPickList">
               {allTags.map((t) => (
                 <button
@@ -886,7 +932,7 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
 
         {view === "col" && (
           <div style={{ padding: 6 }}>
-            <div className="crmHint">{t("Choose column")}</div>
+            <div className="crmHint">{txt("Choose column")}</div>
             <div className="crmPickList">
               {columns.map((c) => (
                 <button
@@ -911,7 +957,6 @@ function SortMenu({ sortMode, setSortMode, tagSort, setTagSort, allTags, columns
 }
 
 export default function ClientsPage({ data, setData, statusMap, setConfirm, toastOk, actionsRef }) {
-  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
 
@@ -1044,21 +1089,21 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
     const name = c?.name || "client";
     const doDelete = () => {
       setData((d) => ({ ...d, clients: (d.clients || []).filter((x) => x.id !== id) }));
-      toast(t("Client deleted"));
+      toast(txt("Client deleted"));
       if (setConfirm) setConfirm(null);
     };
 
     if (setConfirm) {
       setConfirm({
-        title: t("Delete client"),
-        message: t(`Delete \"${name}\"? This cannot be undone.`),
-        confirmText: t("Delete"),
+        title: txt("Delete client"),
+        message: txt(`Delete \"${name}\"? This cannot be undone.`),
+        confirmText: txt("Delete"),
         onConfirm: doDelete,
       });
       return;
     }
 
-    if (window.confirm(t(`Delete \"${name}\"?`))) doDelete();
+    if (window.confirm(txt(`Delete \"${name}\"?`))) doDelete();
   }
 
   function duplicateClient(id) {
@@ -1070,7 +1115,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
       const copy = {
         ...c,
         id: uid(),
-        name: (c.name || t("Client")) + " (copy)",
+        name: (c.name || txt("Client")) + " (copy)",
         archived: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -1079,7 +1124,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
       list.push(copy);
       return { ...d, clients: list };
     });
-    toast(t("Client duplicated"));
+    toast(txt("Client duplicated"));
   }
 
   function toggleArchive(id) {
@@ -1310,7 +1355,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
     });
 
     setAddOpen(false);
-    toast(t("Client added"));
+    toast(txt("Client added"));
   }
 
 
@@ -1328,7 +1373,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
     }));
 
     setColOpen(false);
-    toast(t("Column added"));
+    toast(txt("Column added"));
   }
 
   // Drag-over throttling (smooth + stable)
@@ -1783,7 +1828,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             onClick={() => setAddOpen(true)}
             style={{ background: "rgba(201,53,114,0.22)", borderColor: "rgba(201,53,114,0.38)" }}
           >
-            + {t("addClient")}
+            + {txt("addClient")}
           </button>
         </div>
       )}
@@ -1791,15 +1836,15 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
 
           <input
-            className={t("input")}
+            className={txt("input")}
             style={{ width: 280 }}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("search")}
+            placeholder={txt("search")}
           />
 
           <button className="btn" type="button" onClick={() => setShowArchived((v) => !v)} title="Show archived">
-            {showArchived ? t("hideArchived") : t("showArchived")}
+            {showArchived ? txt("hideArchived") : txt("showArchived")}
           </button>
 
           <SortMenu
@@ -1847,7 +1892,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             </button>
           </div>
 <div style={{ marginLeft: "auto", color: "var(--muted)", fontSize: 12, whiteSpace: "nowrap" }}>
-            {filtered.length} {t("shown")}
+            {filtered.length} {txt("shown")}
           </div>
         </div>
       </div>
@@ -1877,16 +1922,16 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
                 />
               </div>
               <div className="crmCell" style={{ justifyContent: "center" }} />
-              <div className="crmCell">{t("name")}</div>
-              <div className="crmCell">{t("status")}</div>
-              <div className="crmCell">{t("tags")}</div>
-              <div className="crmCell">{t("notes")}</div>
+              <div className="crmCell">{txt("name")}</div>
+              <div className="crmCell">{txt("status")}</div>
+              <div className="crmCell">{txt("tags")}</div>
+              <div className="crmCell">{txt("notes")}</div>
               {columns.map((c) => (
                 <div key={c.id} className="crmCell">
                   {c.name || "Column"}
                 </div>
               ))}
-              <div className="crmCell crmStickyRight">{t("actions")}</div>
+              <div className="crmCell crmStickyRight">{txt("actions")}</div>
             </div>
 
             {filtered.map((c) => {
@@ -1995,10 +2040,10 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
 
                   <div className="crmCell">
                     <input
-                      className={t("input")}
+                      className={txt("input")}
                       value={c.name || ""}
                       onChange={(e) => updateClient(c.id, { name: e.target.value })}
-                      placeholder = {t("Name")}
+                      placeholder = {txt("Name")}
                       style={{ width: "100%" }}
                     />
                   </div>
@@ -2025,7 +2070,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
                     <AutoTextarea
                       value={c.notes || ""}
                       onChange={(v) => updateClient(c.id, { notes: v })}
-                      placeholder={t("notesPlaceholder")}
+                      placeholder={txt("notesPlaceholder")}
                     />
                   </div>
 
@@ -2156,7 +2201,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
         <Modal title="Add column" onClose={() => setColOpen(false)} width={640}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 18, alignItems: "stretch" }}>
             <div>
-              <div className="fieldLabel">{t("column name")} *</div>
+              <div className="fieldLabel">{txt("column name")} *</div>
               <input
                 className="input"
                 value={colDraft.name}
@@ -2167,12 +2212,12 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             </div>
 
             <div>
-              <div className="fieldLabel">{t("type")}</div>
+              <div className="fieldLabel">{txt("type")}</div>
               <BasicSelect
                 value={colDraft.type}
                 onChange={(v) => setColDraft((d) => ({ ...d, type: v }))}
                 width="100%"
-                placeholder={t("type")}
+                placeholder={txt("type")}
                 options={[
                   { value: "text", label: "Text" },
                   { value: "number", label: "Number" },
@@ -2192,7 +2237,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
               onClick={addColumn}
               style={{ background: "rgba(201,53,114,0.22)", borderColor: "rgba(201,53,114,0.38)" }}
             >
-              + {t("addColumn")}
+              + {txt("addColumn")}
             </button>
           </div>
         </Modal>
@@ -2213,7 +2258,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             </div>
 
             <div>
-              <div className="fieldLabel">{t("status")}</div>
+              <div className="fieldLabel">{txt("status")}</div>
               <StatusSelect
                 value={draft.status}
                 options={statusOptions.map((o) => ({ value: o.value, label: statusMap?.[o.value]?.name || o.label }))}
@@ -2224,7 +2269,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             </div>
 
             <div>
-              <div className="fieldLabel">{t("notes")}</div>
+              <div className="fieldLabel">{txt("notes")}</div>
               <AutoTextarea
                 value={draft.notes}
                 onChange={(v) => setDraft((d) => ({ ...d, notes: v }))}
@@ -2233,7 +2278,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
             </div>
 
             <div style={{ gridColumn: "1 / -1" }}>
-              <div className="fieldLabel">{t("tags")}</div>
+              <div className="fieldLabel">{txt("tags")}</div>
               <TagsEditor
                 tags={draft.tags || []}
                 allTags={allTags}
@@ -2308,7 +2353,7 @@ export default function ClientsPage({ data, setData, statusMap, setConfirm, toas
               onClick={addClient}
               style={{ background: "rgba(201,53,114,0.22)", borderColor: "rgba(201,53,114,0.38)" }}
             >
-              + {t("add client")}
+              + {txt("add client")}
             </button>
           </div>
         </Modal>

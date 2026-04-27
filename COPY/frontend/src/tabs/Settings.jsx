@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Checkbox, ColorPicker, STORAGE_KEY, downloadText, safeLoad, toCSV } from "../shared/crmShared.jsx";
-import { useLanguage } from "../i18n/LanguageContext";
 import PhoneInput from "../components/PhoneInput";
 import LogoutButton from "../components/LogoutButton";
 import { supabase } from "../lib/supabase";
@@ -296,7 +295,6 @@ function StatusColorPicker({ value, onChange }) {
 export default function SettingsPage({ data, setData, updateSettings, updateTabs, setConfirm, toastOk, ensureNotify, access = null }) {
 
   const [billingBusy, setBillingBusy] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
   const isRestricted = Boolean(access?.isRestricted);
   const subscriptionStatus = String(access?.status || "").toLowerCase();
   const subscriptionLabel =
@@ -397,7 +395,6 @@ const { data, error } = await supabase.functions.invoke(
       cancelled = true;
     };
   }, [toastOk]);
-  const [openLang, setOpenLang] = useState(false);
   
   function addStatus() {
     setData((d) => ({ ...d, statuses: [...d.statuses, { id: crypto.randomUUID(), name: "New status", color: "#60a5fa" }] }));
@@ -525,85 +522,6 @@ html { scrollbar-gutter: stable; }
   background: rgba(201,53,114,0.18);
   border-color: rgba(201,53,114,0.38);
 }`}</style>
-
-   <div style={{ position: "relative", alignSelf: "flex-start" }}>
-  
-  <button
-  onClick={() => setOpenLang((prev) => !prev)}
-  style={{
-    background: "rgba(255,255,255,0.08)",
-    color: "#fff",
-    border: "1px solid rgba(255,255,255,0.2)",
-    borderRadius: "10px",
-    padding: "8px 12px",
-    cursor: "pointer",
-    backdropFilter: "blur(6px)",
-    minWidth: "140px",
-
-    // 👇 IMPORTANT
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10
-  }}
->
-  <span style={{ fontWeight: 600 }}>
-    {language === "en" && "English"}
-    {language === "ro" && "Română"}
-    {language === "es" && "Español"}
-    {language === "fr" && "Français"}
-  </span>
-
-  <span style={{ opacity: 0.8 }}>
-    ▼
-  </span>
-</button>
-
-  {openLang && (
-    <div
-      style={{
-        position: "absolute",
-        top: "110%",
-        left: 0,
-        background: "rgba(30,30,30,0.95)",
-        border: "1px solid rgba(255,255,255,0.15)",
-        borderRadius: "10px",
-        backdropFilter: "blur(10px)",
-        overflow: "hidden",
-        zIndex: 1000,
-        minWidth: "120px"
-      }}
-   >
-      {[
-        { code: "en", label: "English" },
-        { code: "ro", label: "Română" },
-        { code: "es", label: "Español" },
-        { code: "fr", label: "Français" }
-      ].map((lang) => (
-        <div
-          key={lang.code}
-          onClick={() => {
-            setLanguage(lang.code);
-            setOpenLang(false);
-          }}
-          style={{
-            padding: "8px 12px",
-            cursor: "pointer",
-            color: "#fff"
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
-        >
-          {lang.label}
-        </div>
-      ))}
-    </div>
-  )}
-</div>
 
       {/* General */}
       <div className="card">

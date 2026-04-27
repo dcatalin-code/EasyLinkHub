@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useLanguage } from "../i18n/LanguageContext";
+
 import {
   Checkbox,
   DatePicker,
@@ -11,6 +11,21 @@ import {
   parseISO,
   todayISO,
 } from "../shared/crmShared.jsx";
+
+const TASK_TEXT = {
+  tasks: "Tasks",
+  task: "Task",
+  priority: "Priority",
+  dueDate: "Due date",
+  client: "Client",
+  actions: "Actions",
+  searchTasks: "Search tasks...",
+  addList: "Add list",
+};
+
+function txt(key) {
+  return TASK_TEXT[key] || key;
+}
 
 function uid() {
   return globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2);
@@ -465,7 +480,6 @@ function makeConfettiBurst(x, y) {
 
 export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNotify }) {
   const DEFAULT_TABLE_ID = "tbl_default";
-  const { t } = useLanguage();
   const [search, setSearch] = useState("");
 
   // Drag & drop: reorder tasks within the same table + priority + done state
@@ -537,20 +551,20 @@ export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNo
   function ensureTables(d) {
     const existing = Array.isArray(d.taskTables) ? d.taskTables : [];
     if (existing.length > 0) return existing;
-    return [{ id: DEFAULT_TABLE_ID, title: t("tasks"), color: "#CA3673", order: 0 }];
+    return [{ id: DEFAULT_TABLE_ID, title: txt("tasks"), color: "#CA3673", order: 0 }];
   }
 
   const tablesSorted = useMemo(() => {
     const base = ensureTables(data || {});
     const next = [...base].map((t, i) => ({
       id: t?.id || `${DEFAULT_TABLE_ID}_${i}`,
-      title: String(t?.title || t("tasks")),
+      title: String(t?.title || txt("tasks")),
       color: String(t?.color || "#CA3673"),
       order: Number.isFinite(t?.order) ? t.order : i,
     }));
     next.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     // Ensure default exists and is first only if it was the only one; otherwise keep order
-    if (!next.some((t) => t.id === DEFAULT_TABLE_ID)) next.unshift({ id: DEFAULT_TABLE_ID, title: t("tasks"), color: "#CA3673", order: -999 });
+    if (!next.some((t) => t.id === DEFAULT_TABLE_ID)) next.unshift({ id: DEFAULT_TABLE_ID, title: txt("tasks"), color: "#CA3673", order: -999 });
     return next.map((t, i) => ({ ...t, order: i }));
   }, [data]);
 
@@ -729,7 +743,7 @@ export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNo
     const current = ensureTables(draftData);
     const sorted = [...current].map((t, i) => ({
       id: t?.id || `${DEFAULT_TABLE_ID}_${i}`,
-      title: String(t?.title || t("tasks")),
+      title: String(t?.title || txt("tasks")),
       color: String(t?.color || "#CA3673"),
       order: Number.isFinite(t?.order) ? t.order : i,
     })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -835,7 +849,7 @@ export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNo
     const rid = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2);
     setData((dd) => ({
       ...dd,
-      reminders: [{ id: rid, type: t("task"), refId: t.id, title: t.title || t("task"), whenTs, firedAt: null }, ...(dd.reminders || [])],
+      reminders: [{ id: rid, type: txt("task"), refId: t.id, title: t.title || txt("task"), whenTs, firedAt: null }, ...(dd.reminders || [])],
     }));
     toastOk("Reminder set");
   }
@@ -1108,14 +1122,14 @@ export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNo
         <input
           className="input"
           style={{ flex: 1, minWidth: 260 }}
-          placeholder={t("searchTasks")}
+          placeholder={txt("searchTasks")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>{(data.tasks || []).filter((t) => !t.done).length} open</div>
           <button className="btn btnPrimary" onClick={addTable} title="Add a new list">
-            + {t("addList")}
+            + {txt("addList")}
           </button>
         </div>
       </div>
@@ -1211,11 +1225,11 @@ export default function TasksPage({ data, setData, setConfirm, toastOk, ensureNo
                         }}
                       >
                         <div></div>
-                        <div>{t("task")}</div>
-                        <div>{t("priority")}</div>
-                        <div>{t("dueDate")}</div>
-                        <div>{t("client")}</div>
-                        <div>{t("actions")}</div>
+                        <div>{txt("task")}</div>
+                        <div>{txt("priority")}</div>
+                        <div>{txt("dueDate")}</div>
+                        <div>{txt("client")}</div>
+                        <div>{txt("actions")}</div>
                       </div>
                     </div>
 

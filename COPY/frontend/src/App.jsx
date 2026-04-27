@@ -7,7 +7,6 @@ import GoalsPage from "./tabs/Goals.jsx";
 import InvoicesPage from "./tabs/Invoices.jsx";
 import SettingsPage from "./tabs/Settings.jsx";
 import logo from "./assets/logo.svg";
-import { useLanguage } from "./i18n/LanguageContext";
 import NotepadPage from "./tabs/Notepad.jsx";
 import LogoutButton from "./components/LogoutButton";
 
@@ -143,9 +142,28 @@ function IconCalendar() {
   );
 }
 
-export default function App({ access = null }) {
+const APP_TEXT = {
+  clients: "Clients",
+  tasks: "Tasks",
+  calendar: "Calendar",
+  budget: "Budget",
+  goals: "Goals",
+  invoices: "Invoices",
+  settings: "Settings",
+  notepad: "Notepad",
+  add: "Add",
+  addClient: "Add client",
+  addColumn: "Add column",
+  addBudgetEntry: "Add budget entry",
+  today: "Today",
+  open: "Open",
+};
 
-  const { t } = useLanguage();
+function appLabel(key) {
+  return APP_TEXT[key] || key;
+}
+
+export default function App({ access = null }) {
   const [data, setData] = useState(safeLoad);
   const [tab, setTab] = useState("clients");
   const [toast, setToast] = useState(null);
@@ -227,7 +245,6 @@ export default function App({ access = null }) {
       : restrictedStatus === "canceled"
       ? "Subscription canceled"
       : "Access expired";
-  const showRestrictedState = isRestricted && tab !== "settings";
 
   const computeEnabled = (tabsObj) => {
     const list = enabledTabs(tabsObj);
@@ -463,28 +480,28 @@ const pageTitle = useMemo(
           <span style={iconWrap}>
             <IconUsers />
           </span>
-          <span>{t("addClient")}</span>
+          <span>{appLabel("addClient")}</span>
         </button>
 
         <button className="btn" type="button" style={tileStyle} onClick={openTasks}>
           <span style={iconWrap}>
             <IconCheck />
           </span>
-          <span>{t("tasks")}</span>
+          <span>{appLabel("tasks")}</span>
         </button>
 
         <button className="btn" type="button" style={tileStyle} onClick={openAddBudget}>
           <span style={iconWrap}>
             <IconWallet />
           </span>
-          <span>{t("add budget entry")}</span>
+          <span>{appLabel("addBudgetEntry")}</span>
         </button>
 
         <button className="btn" type="button" style={tileStyle} onClick={openGoals}>
           <span style={iconWrap}>
             <IconTarget />
           </span>
-          <span>{t("goals")}</span>
+          <span>{appLabel("goals")}</span>
         </button>
       </div>
     );
@@ -525,8 +542,8 @@ const pageTitle = useMemo(
     onClick={() => guardAction(() => setTab(tabItem.key))}
   >
     <div className="navLeft">
-      {tabItem.icon}
-      <span style={{ fontSize: 13 }}>{t(tabItem.label)}</span>
+      {tabItem.icon ? <tabItem.icon /> : null}
+      <span style={{ fontSize: 13 }}>{appLabel(tabItem.label)}</span>
     </div>
     <span style={{ color: "var(--muted)", fontSize: 12 }}>▶</span>
   </button>
@@ -534,19 +551,10 @@ const pageTitle = useMemo(
           </div>
 
           <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
-            <button
-              className="btn btnPrimary"
-              style={{
-                flex: 1,
-                background: "linear-gradient(135deg, rgba(201,53,114,0.24), rgba(122,31,128,0.20))",
-                borderColor: "rgba(201,53,114,0.38)",
-                color: "#fff",
-              }}
-              onClick={() => guardAction(() => setModal({ type: "quickAdd" }))}
-            >
-              + {t("add")}
+            <button className="btn btnPrimary" style={{ flex: 1 }} onClick={() => guardAction(() => setModal({ type: "quickAdd" }))}>
+              + {appLabel("add")}
             </button>
-            <button className="iconBtn" onClick={() => guardAction(() => setTab("settings"), "settings")} title={t("settings")}>
+            <button className="iconBtn" onClick={() => guardAction(() => setTab("settings"), "settings")} title={appLabel("settings")}>
               <IconSettings />
             </button>
           </div>
@@ -556,7 +564,7 @@ const pageTitle = useMemo(
                     {!data.settings.todayStripDismissed && (todayInfo.dueRem > 0 || todayInfo.dueTasks > 0 || todayInfo.dueCalendar > 0) && (
             <div className="todayStrip">
               <div className="todayLeft">
-                <strong>{t("common.today")}</strong>
+                <strong>{appLabel("today")}</strong>
                 <span>
                   {todayInfo.dueTasks ? `${todayInfo.dueTasks} task${todayInfo.dueTasks === 1 ? "" : "s"} due` : ""}
                   {todayInfo.dueTasks && todayInfo.dueRem ? " • " : ""}
@@ -567,7 +575,7 @@ const pageTitle = useMemo(
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="btn" onClick={() => guardAction(() => setTab("tasks"))}>
-                  {t("common.open")}
+                  {appLabel("open")}
                 </button>
                 <button className="iconBtn" onClick={() => updateSettings({ todayStripDismissed: true })} title="Dismiss">
                   ✕
@@ -578,14 +586,14 @@ const pageTitle = useMemo(
 
           <div className="topbar">
             <div className="hgroup">
-             <h2>{t(pageTitle)}</h2>
+             <h2>{appLabel(pageTitle)}</h2>
             </div>
 
             <div className="actions">
-              {!showRestrictedState && tab === "clients" && (
+              {tab === "clients" && (
                 <>
                   <button className="btn" type="button" onClick={() => guardAction(() => clientsActionsRef.current?.openAddColumn?.())}>
-                    + {t("addColumn")}
+                    + {appLabel("addColumn")}
                   </button>
 
                   <button
@@ -594,29 +602,14 @@ const pageTitle = useMemo(
                     onClick={() => guardAction(() => clientsActionsRef.current?.openAddClient?.())}
                     style={{ background: "rgba(201,53,114,0.22)", borderColor: "rgba(201,53,114,0.38)" }}
                   >
-                    {t("addClient")}
+                    {appLabel("addClient")}
                   </button>
                 </>
               )}
               {tab !== "settings" && (
-                showRestrictedState ? (
-                  <button
-                    className="btn btnPrimary"
-                    type="button"
-                    onClick={() => setTab("settings")}
-                    style={{
-                      minWidth: 170,
-                      background: "linear-gradient(135deg, rgba(201,53,114,0.22), rgba(122,31,128,0.18))",
-                      borderColor: "rgba(201,53,114,0.38)",
-                    }}
-                  >
-                    Open settings
-                  </button>
-                ) : (
-                  <button className="iconBtn" onClick={() => guardAction(() => setTab("settings"), "settings")} title="Settings">
-                    <IconSettings />
-                  </button>
-                )
+                <button className="iconBtn" onClick={() => guardAction(() => setTab("settings"), "settings")} title="Settings">
+                  <IconSettings />
+                </button>
               )}
             </div>
           </div>
@@ -625,192 +618,114 @@ const pageTitle = useMemo(
             className="fadeIn"
             style={{
               position: "relative",
-              minHeight: showRestrictedState ? "calc(100vh - 220px)" : undefined,
+              pointerEvents: isRestricted && tab !== "settings" ? "none" : "auto",
+              opacity: isRestricted && tab !== "settings" ? 0.55 : 1,
+              transition: "opacity 160ms ease",
             }}
           >
-            {showRestrictedState ? (
+            {isRestricted && tab !== "settings" && (
               <div
                 style={{
-                  minHeight: "calc(100vh - 220px)",
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 20,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "18px 0 8px",
+                  padding: 24,
+                  pointerEvents: "auto",
                 }}
               >
                 <div
                   className="glass"
                   style={{
-                    position: "relative",
-                    width: "min(720px, 100%)",
-                    padding: 32,
-                    borderRadius: 28,
-                    overflow: "hidden",
-                    background:
-                      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 28px 90px rgba(0,0,0,0.28)",
+                    width: "min(520px, 100%)",
+                    padding: 24,
+                    borderRadius: 24,
+                    textAlign: "center",
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                   }}
                 >
                   <div
                     style={{
-                      position: "absolute",
-                      inset: 0,
-                      pointerEvents: "none",
-                      background:
-                        "radial-gradient(520px 220px at 18% 0%, rgba(105,168,255,0.14), transparent 60%), radial-gradient(520px 240px at 100% 0%, rgba(185,120,255,0.14), transparent 58%)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "8px 12px",
+                      borderRadius: 999,
+                      border: "1px solid var(--stroke)",
+                      background: "rgba(255,255,255,0.05)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "var(--muted)",
                     }}
-                  />
+                  >
+                    {restrictedLabel}
+                  </div>
 
-                  <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 18 }}>
-                    <div
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: 22,
-                        display: "grid",
-                        placeItems: "center",
-                        border: "1px solid rgba(201,53,114,0.28)",
-                        background:
-                          "linear-gradient(135deg, rgba(201,53,114,0.20), rgba(122,31,128,0.14))",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-                        fontSize: 30,
-                      }}
-                    >
-                      🔒
-                    </div>
+                  <h3 style={{ margin: "16px 0 8px", fontSize: 28, lineHeight: 1.05 }}>
+                    Upgrade to restore full access
+                  </h3>
 
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        alignSelf: "flex-start",
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "var(--muted)",
-                      }}
-                    >
-                      {restrictedLabel}
-                    </div>
+                  <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+                    Your workspace is visible, but editing and CRM actions are currently locked until billing is resolved.
+                  </p>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 560 }}>
-                      <h3 style={{ margin: 0, fontSize: 34, lineHeight: 1.02 }}>
-                        Upgrade to restore full access
-                      </h3>
-
-                      <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.75 }}>
-                        Your workspace is safe, but CRM actions are locked until billing is resolved.
-                      </p>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                        gap: 12,
-                      }}
-                    >
-                      {[
-                        "Clients and pipeline stay visible",
-                        "Editing is locked until payment succeeds",
-                        "Open settings to manage billing",
-                      ].map((item) => (
-                        <div
-                          key={item}
-                          style={{
-                            padding: "14px 16px",
-                            borderRadius: 18,
-                            border: "1px solid rgba(255,255,255,0.10)",
-                            background: "rgba(255,255,255,0.04)",
-                            color: "var(--muted)",
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "flex-start",
-                        gap: 10,
-                        marginTop: 4,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        className="btn btnPrimary"
-                        type="button"
-                        onClick={() => setTab("settings")}
-                        style={{
-                          minWidth: 170,
-                          background: "linear-gradient(135deg, rgba(201,53,114,0.22), rgba(122,31,128,0.18))",
-                          borderColor: "rgba(201,53,114,0.38)",
-                        }}
-                      >
-                        Open settings
-                      </button>
-                    </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+                    <button className="btn btnPrimary" type="button" onClick={() => setTab("settings")}>
+                      Open settings
+                    </button>
                   </div>
                 </div>
               </div>
-            ) : (
-              <>
-                {tab === "notepad" && (
-                  <NotepadPage
-                    data={data}
-                    setData={setData}
-                  />
-                )}
-                {tab === "clients" && (
-                  <ClientsPage
-                    data={data}
-                    setData={setData}
-                    statusMap={statusMap}
-                    setConfirm={setConfirm}
-                    toastOk={toastOk}
-                    actionsRef={clientsActionsRef}
-                  />
-                )}
-                {tab === "tasks" && (
-                  <TasksPage
-                    data={data}
-                    setData={setData}
-                    setConfirm={setConfirm}
-                    toastOk={toastOk}
-                    ensureNotify={() => ensureNotificationPermission(toastOk, setData)}
-                  />
-                )}
-                {tab === "calendar" && (
-                  <CalendarPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />
-                )}
-                {tab === "budget" && <BudgetPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />}
-                {tab === "invoices" && (
-                  <InvoicesPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />
-                )}
-                {tab === "goals" && <GoalsPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />}
-                {tab === "settings" && (
-                  <SettingsPage
-                    data={data}
-                    setData={setData}
-                    updateSettings={updateSettings}
-                    updateTabs={updateTabs}
-                    setConfirm={setConfirm}
-                    toastOk={toastOk}
-                    ensureNotify={() => ensureNotificationPermission(toastOk, setData)}
-                    access={access}
-                  />
-                )}
-              </>
+            )}
+
+            {tab === "notepad" && (
+  <NotepadPage
+    data={data}
+    setData={setData}
+  />
+)}
+            {tab === "clients" && (
+              <ClientsPage
+                data={data}
+                setData={setData}
+                statusMap={statusMap}
+                setConfirm={setConfirm}
+                toastOk={toastOk}
+                actionsRef={clientsActionsRef}
+              />
+            )}
+            {tab === "tasks" && (
+              <TasksPage
+                data={data}
+                setData={setData}
+                setConfirm={setConfirm}
+                toastOk={toastOk}
+                ensureNotify={() => ensureNotificationPermission(toastOk, setData)}
+              />
+            )}
+            {tab === "calendar" && (
+              <CalendarPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />
+            )}
+            {tab === "budget" && <BudgetPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />}
+            {tab === "invoices" && (
+              <InvoicesPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />
+            )}
+            {tab === "goals" && <GoalsPage data={data} setData={setData} setConfirm={setConfirm} toastOk={toastOk} />}
+            {tab === "settings" && (
+              <SettingsPage
+                data={data}
+                setData={setData}
+                updateSettings={updateSettings}
+                updateTabs={updateTabs}
+                setConfirm={setConfirm}
+                toastOk={toastOk}
+                ensureNotify={() => ensureNotificationPermission(toastOk, setData)}
+                access={access}
+              />
             )}
           </div>
         </main>
@@ -821,8 +736,8 @@ const pageTitle = useMemo(
         <div className="mobileNavInner">
           {tabMeta.slice(0, 6).map((t) => (
             <button key={t.key} className={"mbtn" + (tab === t.key ? " mbtnActive" : "")} onClick={() => guardAction(() => setTab(t.key))}>
-              {t.icon}
-              <span>{t.label}</span>
+              {t.icon ? <t.icon /> : null}
+              <span>{appLabel(t.label)}</span>
             </button>
           ))}
         </div>
