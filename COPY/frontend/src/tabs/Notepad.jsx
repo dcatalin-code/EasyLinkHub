@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { safeLoad, safeSave } from "../shared/crmShared.jsx";
+import { safeLoad } from "../shared/crmShared.jsx";
 import NotesTree from "../components/notepad/NotesTree.jsx";
 import EditorToolbar from "../components/notepad/EditorToolbar.jsx";
 
@@ -385,10 +385,10 @@ function getSearchVisibleIds(list, query) {
   return visibleIds;
 }
 
-export default function Notepad() {
+export default function Notepad({ data: appData, setData: setAppData } = {}) {
     
-  const [data, setData] = useState(() => {
-    const loaded = safeLoad();
+  const [data, setLocalData] = useState(() => {
+    const loaded = appData || safeLoad();
     return {
       ...loaded,
       notes: normalizeNotes(loaded?.notes || []),
@@ -396,6 +396,15 @@ export default function Notepad() {
     };
 
   });
+
+  useEffect(() => {
+    if (!appData) return;
+    setLocalData({
+      ...appData,
+      notes: normalizeNotes(appData?.notes || []),
+      colorPresets: appData?.colorPresets || DEFAULT_COLOR_PRESETS,
+    });
+  }, [appData]);
 
 
   const [activeId, setActiveId] = useState(null);
@@ -703,8 +712,8 @@ const visibleNoteIdsInOrder = useMemo(
       colorPresets,
       ...extra,
     };
-    setData(updated);
-    safeSave(updated);
+    setLocalData(updated);
+    setAppData?.(updated);
   }
 
   function selectionInsideEditor() {
@@ -1623,8 +1632,8 @@ const newNote = {
       ...data,
       colorPresets: nextPresets,
     };
-    setData(updated);
-    safeSave(updated);
+    setLocalData(updated);
+    setAppData?.(updated);
   }
 
   function applyHexInput() {

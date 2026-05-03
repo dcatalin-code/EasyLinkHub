@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Checkbox, ColorPicker, STORAGE_KEY, downloadText, safeLoad, toCSV } from "../shared/crmShared.jsx";
+import { Checkbox, ColorPicker, DEFAULT, downloadText, resetAccountState, toCSV } from "../shared/crmShared.jsx";
 import PhoneInput from "../components/PhoneInput";
 import LogoutButton from "../components/LogoutButton";
 import { supabase } from "../lib/supabase";
@@ -912,7 +912,6 @@ html { scrollbar-gutter: stable; }
           <LogoutButton />
         </div>
       </div>
-      {/* Reset local demo data (still needed, but no â€œdanger zoneâ€ label) */}
       <div className="card">
         <div className="cardTitle"><h3>Reset</h3></div>
         <button
@@ -920,13 +919,18 @@ html { scrollbar-gutter: stable; }
           style={{ borderColor: "rgba(239,68,68,0.45)", background: "rgba(239,68,68,0.14)" }}
           onClick={() => setConfirm({
             title: "Reset everything",
-            message: "This wipes all local data for this CRM on this device.",
+            message: "This wipes all CRM data saved on this account.",
             confirmText: "Reset",
-            onConfirm: () => {
-              localStorage.removeItem(STORAGE_KEY);
-              setData(safeLoad());
-              setConfirm(null);
-              toastOk("Reset complete");
+            onConfirm: async () => {
+              try {
+                const resetData = await resetAccountState();
+                setData(resetData || DEFAULT);
+                toastOk("Account data reset");
+              } catch (err) {
+                alert(err?.message || "Failed to reset account data");
+              } finally {
+                setConfirm(null);
+              }
             },
           })}
         >

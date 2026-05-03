@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, useCallback, useEffect, useState } from "react";
+import { cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthPage from "./AuthPage";
 
@@ -54,6 +54,19 @@ function AccessLoadingScreen() {
   );
 }
 
+
+function cleanAuthUrl() {
+  if (typeof window === "undefined") return;
+
+  const hasAuthHash = window.location.hash.includes("access_token=") || window.location.hash.includes("refresh_token=");
+  const hasAuthQuery = window.location.search.includes("code=") || window.location.search.includes("error_code=");
+
+  if (!hasAuthHash && !hasAuthQuery) return;
+
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
+
 function buildFallbackAccess() {
   return {
     status: "expired",
@@ -69,15 +82,19 @@ export default function AuthGate({ children }) {
   const [session, setSession] = useState(undefined);
   const [access, setAccess] = useState(null);
   const [loadingAccess, setLoadingAccess] = useState(true);
+  const hasResolvedInitialAccess = useRef(false);
 
-  const loadAccess = useCallback(async () => {
-    setLoadingAccess(true);
+  const loadAccess = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoadingAccess(true);
+    }
 
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !sessionData?.session?.access_token) {
       setAccess(buildFallbackAccess());
       setLoadingAccess(false);
+      hasResolvedInitialAccess.current = true;
       return;
     }
 
@@ -93,11 +110,13 @@ export default function AuthGate({ children }) {
     if (error || !data) {
       setAccess(buildFallbackAccess());
       setLoadingAccess(false);
+      hasResolvedInitialAccess.current = true;
       return;
     }
 
     setAccess(data);
     setLoadingAccess(false);
+    hasResolvedInitialAccess.current = true;
   }, []);
 
   useEffect(() => {
@@ -107,11 +126,13 @@ export default function AuthGate({ children }) {
       if (!mounted) return;
 
       const nextSession = data.session ?? null;
+      if (nextSession?.user?.id) cleanAuthUrl();
       setSession(nextSession);
 
       if (!nextSession?.user?.id) {
         setAccess(null);
         setLoadingAccess(false);
+        hasResolvedInitialAccess.current = true;
         return;
       }
 
@@ -120,16 +141,19 @@ export default function AuthGate({ children }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (nextSession?.user?.id) cleanAuthUrl();
       setSession(nextSession ?? null);
 
       if (!nextSession?.user?.id) {
         setAccess(null);
         setLoadingAccess(false);
+        hasResolvedInitialAccess.current = true;
         return;
       }
 
-      loadAccess();
+      const silent = hasResolvedInitialAccess.current && event !== "SIGNED_OUT" && event !== "SIGNED_IN";
+      loadAccess({ silent });
     });
 
     return () => {
@@ -138,7 +162,10 @@ export default function AuthGate({ children }) {
     };
   }, [loadAccess]);
 
-  if (session === undefined || loadingAccess) return <AccessLoadingScreen />;
+  if (session === undefined || (!hasResolvedInitialAccess.current && loadingAccess)) {
+    return <AccessLoadingScreen />;
+  }
+
   if (!session) return <AuthPage />;
 
   if (isValidElement(children)) {

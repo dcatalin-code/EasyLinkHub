@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { supabase } from "../lib/supabase";
 
 const STORAGE_KEY = "crm_modern_simple_v4";
+const ACCOUNT_DATA_TABLE = "app_user_data";
 
 const ENABLETABSDEFAULT = {
   clients: true,
@@ -156,45 +158,110 @@ function downloadBudgetBackupExcel(data, sym) {
 }
 function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
 
+function normalizeState(input) {
+  const parsed = input && typeof input === "object" ? input : {};
+  const merged = {
+    ...DEFAULT,
+    ...parsed,
+    settings: { ...DEFAULT.settings, ...(parsed.settings || {}) },
+    statuses: Array.isArray(parsed.statuses) ? parsed.statuses : DEFAULT.statuses,
+    columns: Array.isArray(parsed.columns) ? parsed.columns : DEFAULT.columns,
+    clients: Array.isArray(parsed.clients) ? parsed.clients : DEFAULT.clients,
+    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : DEFAULT.tasks,
+    budget: Array.isArray(parsed.budget) ? parsed.budget : DEFAULT.budget,
+    goals: Array.isArray(parsed.goals) ? parsed.goals : DEFAULT.goals,
+    reminders: Array.isArray(parsed.reminders) ? parsed.reminders : DEFAULT.reminders,
+    calendarEvents: Array.isArray(parsed.calendarEvents) ? parsed.calendarEvents : DEFAULT.calendarEvents,
+    invoices: Array.isArray(parsed.invoices) ? parsed.invoices : DEFAULT.invoices,
+    invoiceSettings: { ...DEFAULT.invoiceSettings, ...(parsed.invoiceSettings || {}) },
+    notes: Array.isArray(parsed.notes) ? parsed.notes : DEFAULT.notes,
+    notepad: parsed.notepad && typeof parsed.notepad === "object" ? parsed.notepad : DEFAULT.notepad,
+  };
+
+  merged.settings.tabs = { ...DEFAULT.settings.tabs, ...(merged.settings.tabs || {}) };
+  merged.settings.tabs.settings = true;
+
+  if (!merged.statuses.some((s) => s.id === "archived")) {
+    merged.statuses = [...merged.statuses, { id: "archived", name: "Archive", color: "#71717a" }];
+  }
+
+  merged.clients = merged.clients.map((c, idx) => ({
+    ...c,
+    orderIndex: Number.isFinite(Number(c.orderIndex)) ? Number(c.orderIndex) : idx,
+  }));
+
+  return merged;
+}
+
 function safeLoad() {
+  return normalizeState(DEFAULT);
+}
+
+function safeSave(_data) {
+  // Account data is saved with saveAccountState(). localStorage is no longer used for CRM data.
+}
+
+async function getCurrentUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user?.id) throw new Error("You must be logged in to load account data.");
+  return data.user.id;
+}
+
+function readLegacyLocalState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT;
-    const parsed = JSON.parse(raw);
-    const merged = {
-      ...DEFAULT,
-      ...parsed,
-      settings: { ...DEFAULT.settings, ...(parsed.settings || {}) },
-      statuses: Array.isArray(parsed.statuses) ? parsed.statuses : DEFAULT.statuses,
-      columns: Array.isArray(parsed.columns) ? parsed.columns : DEFAULT.columns,
-      clients: Array.isArray(parsed.clients) ? parsed.clients : DEFAULT.clients,
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : DEFAULT.tasks,
-      budget: Array.isArray(parsed.budget) ? parsed.budget : DEFAULT.budget,
-      goals: Array.isArray(parsed.goals) ? parsed.goals : DEFAULT.goals,
-      reminders: Array.isArray(parsed.reminders) ? parsed.reminders : DEFAULT.reminders,
-    };
-    merged.settings.tabs = { ...DEFAULT.settings.tabs, ...(merged.settings.tabs || {}) };
-
-    // Settings can NEVER be hidden.
-    merged.settings.tabs.settings = true;
-
-    if (!merged.statuses.some((s) => s.id === "archived")) {
-      merged.statuses = [...merged.statuses, { id: "archived", name: "Archive", color: "#71717a" }];
-    }
-
-    // Ensure orderIndex exists.
-merged.clients = merged.clients.map((c, idx) => ({
-  ...c,
-  orderIndex: Number.isFinite(Number(c.orderIndex)) ? Number(c.orderIndex) : idx,
-}));
-
-    return merged;
+    if (!raw) return null;
+    return normalizeState(JSON.parse(raw));
   } catch {
-    return DEFAULT;
+    return null;
   }
 }
-function safeSave(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+
+async function loadAccountState() {
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await supabase
+    .from(ACCOUNT_DATA_TABLE)
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data?.data) {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    return normalizeState(data.data);
+  }
+
+  const initialData = readLegacyLocalState() || normalizeState(DEFAULT);
+  await saveAccountState(initialData);
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  return initialData;
+}
+
+async function saveAccountState(data) {
+  const userId = await getCurrentUserId();
+  const payload = normalizeState(data);
+
+  const { error } = await supabase
+    .from(ACCOUNT_DATA_TABLE)
+    .upsert(
+      {
+        user_id: userId,
+        data: payload,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (error) throw error;
+}
+
+async function resetAccountState() {
+  const resetData = normalizeState(DEFAULT);
+  await saveAccountState(resetData);
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  return resetData;
 }
 
 /* =========================
@@ -231,7 +298,13 @@ const DEFAULT = {
   tasks: [],
   budget: [],
   goals: [],
+  calendarEvents: [],
   reminders: [],
+  invoices: [],
+  invoiceSettings: {},
+  notes: [],
+  folders: [],
+  colorPresets: [],
 };
 
 /* =========================
@@ -1237,6 +1310,7 @@ export {
   ColorPicker,
   ConfirmModal,
   CurrencyDropdown,
+  ACCOUNT_DATA_TABLE,
   DEFAULT,
   DatePicker,
   ENABLETABSDEFAULT,
@@ -1270,8 +1344,12 @@ export {
   monthKey,
   notificationTitleFor,
   parseISO,
+  loadAccountState,
+  normalizeState,
+  resetAccountState,
   safeLoad,
   safeSave,
+  saveAccountState,
   tableHtml,
   toCSV,
   todayISO,

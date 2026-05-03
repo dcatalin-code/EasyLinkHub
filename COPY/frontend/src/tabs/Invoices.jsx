@@ -3,6 +3,9 @@ import emailjs from "@emailjs/browser";
 import { useEffect, useMemo, useRef, useState } from "react";
 import PhoneInput from "../components/PhoneInput";
 
+const INVOICE_PREVIEW_WIDTH = 794;
+const INVOICE_PREVIEW_HEIGHT = 1123;
+
 function uid() {
   try {
     if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -290,51 +293,55 @@ function invoiceDocCss() {
   return `
     :root{--docText:#121316;--muted:#60646C;--line:#E7E8EC;--bg:#ffffff;--soft:#F6F7F9;--accent:#C93572;}
     *{box-sizing:border-box}
-    body{margin:0;background:var(--soft);color:var(--docText);font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";}
-    .sheetWrap{padding:24px;display:flex;justify-content:center;}
-    .sheet{width:min(860px, 100%);background:var(--bg);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 40px rgba(20,20,22,.10);overflow:hidden;}
-    .top{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;padding:28px 28px 18px;}
-    .brand{display:flex;gap:14px;align-items:center;min-width:260px;}
+    html,body{width:794px;min-height:1123px;margin:0;overflow:hidden;}
+    body{background:#fff;color:var(--docText);font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";}
+    .sheetWrap{width:794px;min-height:1123px;padding:0;display:block;background:#fff;overflow:hidden;}
+    .sheet{width:794px;min-height:1123px;background:var(--bg);border:none;border-radius:0;box-shadow:none;overflow:hidden;}
+    .top{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;padding:44px 48px 26px;min-width:0;}
+    .brand{display:flex;gap:14px;align-items:center;min-width:0;flex:1 1 280px;overflow:hidden;}
+    .brand > div:last-child{min-width:0;}
     .logoBox{width:62px;height:62px;border-radius:16px;border:1px dashed #D7D9E0;background:linear-gradient(180deg,#FAFAFB,#F2F3F6);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 62px;}
     .logoBox img{width:100%;height:100%;object-fit:cover;}
-    .brandName{font-weight:600;letter-spacing:.2px;font-size:18px;line-height:1.1;}
-    .brandMeta{margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.4;white-space:pre-line;}
-    .rightMeta{text-align:right;min-width:240px;}
-    .title{font-size:22px;font-weight:600;letter-spacing:.3px;margin:0;}
+    .brandName{font-weight:600;letter-spacing:.2px;font-size:18px;line-height:1.1;overflow-wrap:anywhere;}
+    .brandMeta{margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.4;white-space:pre-line;overflow-wrap:anywhere;}
+    .rightMeta{text-align:right;min-width:0;max-width:100%;flex:0 1 300px;overflow:hidden;}
+    .title{font-size:clamp(18px,4.5vw,22px);font-weight:600;letter-spacing:.3px;margin:0;white-space:normal;overflow-wrap:anywhere;}
     .badge{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;margin-top:10px;background:#fff;}
     .dot{width:8px;height:8px;border-radius:99px;background:var(--accent);}
-    .metaGrid{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;justify-items:end;}
-    .metaItem{min-width:160px;}
+    .metaGrid{margin-top:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;justify-items:end;}
+    .metaItem{min-width:0;width:100%;}
     .metaLabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
     .metaVal{font-size:13.5px;font-weight:600;margin-top:2px;}
     .divider{height:1px;background:var(--line);}
-    .mid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px 28px;}
+    .mid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:24px 48px;}
     .panelTitle{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
     .who{font-size:13.5px;line-height:1.5;white-space:pre-line;}
     .who strong{font-weight:600;}
-    .table{padding:0 28px 18px;}
-    table{width:100%;border-collapse:separate;border-spacing:0;}
+    .table{padding:0 48px 22px;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table{width:100%;min-width:480px;border-collapse:separate;border-spacing:0;}
     thead th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);}
     tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.5px;}
     .num{text-align:right;white-space:nowrap;}
     .desc{font-weight:600;}
     .sub{color:var(--muted);font-size:12.5px;margin-top:3px;}
-    .totalsWrap{display:flex;justify-content:flex-end;padding:0 28px 26px;}
+    .totalsWrap{display:flex;justify-content:flex-end;padding:0 48px 30px;}
     .totals{width:min(340px, 100%);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
     .row{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;background:#fff;}
     .row + .row{border-top:1px solid var(--line);}
     .row strong{font-weight:600;}
     .rowMuted{color:var(--muted)}
     .grand{background:linear-gradient(180deg,#fff,#FAFAFB);}
-    .foot{padding:0 28px 28px;display:grid;grid-template-columns:1.2fr .8fr;gap:18px;}
+    .foot{padding:0 48px 48px;display:grid;grid-template-columns:1.2fr .8fr;gap:18px;}
     .box{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff;}
     .box p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.55;white-space:pre-line;}
     .box strong{color:var(--docText)}
 
+    @page{size:A4;margin:0;}
     @media print{
+      html,body{width:210mm;min-height:297mm;overflow:hidden;}
       body{background:#fff;}
-      .sheetWrap{padding:0}
-      .sheet{width:100%;border:none;border-radius:0;box-shadow:none;}
+      .sheetWrap{width:210mm;min-height:297mm;padding:0;}
+      .sheet{width:210mm;min-height:297mm;border:none;border-radius:0;box-shadow:none;}
     }
   `;
 }
@@ -606,9 +613,10 @@ export default function InvoicesPage({ data, setData, setConfirm, toastOk }) {
       .invPreviewTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);}
       :root[data-theme="light"] .invPreviewTop{border-bottom:1px solid rgba(0,0,0,0.08);} 
       .invPreviewLabel{font-weight:600;}
-      .invPreviewInner{padding:10px;}
-      .invIframe{width:100%;height: 760px;border:0;border-radius:14px;background:#fff;}
-      @media (max-width: 980px){.invIframe{height: 680px;}}
+      .invPreviewInner{padding:10px;overflow:hidden;max-width:100%;}
+      .invPreviewStage{position:relative;overflow:hidden;border-radius:14px;background:#fff;margin:0 auto;box-shadow:0 10px 28px rgba(0,0,0,.18);}
+      .invIframe{display:block;border:0;border-radius:14px;background:#fff;max-width:none;overflow:hidden;}
+      @media (max-width: 560px){.invPreviewInner{padding:6px;}.invPreviewStage,.invIframe{border-radius:12px;}}
 
       .invMiniBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;border:1px solid rgba(255,255,255,0.10);background: rgba(255,255,255,0.06);padding:10px 12px;font-weight:600;cursor:pointer;}
       :root[data-theme="light"] .invMiniBtn{border:1px solid rgba(0,0,0,0.10);background: rgba(255,255,255,0.86);} 
@@ -708,7 +716,10 @@ const totals = useMemo(() => {
 
 
   const iframeRef = useRef(null);
+  const previewBoxRef = useRef(null);
   const [previewKey, setPreviewKey] = useState(0);
+  const [previewHeight, setPreviewHeight] = useState(INVOICE_PREVIEW_HEIGHT);
+  const [previewScale, setPreviewScale] = useState(1);
 
   const previewHtml = useMemo(() => {
   if (!draft) return "";
@@ -721,6 +732,35 @@ const totals = useMemo(() => {
     bodyHtml,
   });
 }, [draft, totals]);
+
+  const resizePreviewFrame = () => {
+    const box = previewBoxRef.current;
+
+    if (box) {
+      const availableWidth = Math.max(0, box.clientWidth || 0);
+      const nextScale = clamp(availableWidth / INVOICE_PREVIEW_WIDTH, 0.25, 1);
+      setPreviewScale((prev) => (Math.abs(prev - nextScale) > 0.005 ? nextScale : prev));
+    }
+
+    setPreviewHeight(INVOICE_PREVIEW_HEIGHT);
+  };
+
+  useEffect(() => {
+    const el = previewBoxRef.current;
+    if (!el) return;
+
+    const update = () => requestAnimationFrame(resizePreviewFrame);
+    update();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", update);
+      return () => window.removeEventListener("resize", update);
+    }
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [previewHtml]);
 
 
 function openSendModal() {
@@ -1005,7 +1045,7 @@ async function doDownloadPdf() {
     mount.style.position = "fixed";
     mount.style.left = "-10000px";
     mount.style.top = "0";
-    mount.style.width = "860px";
+    mount.style.width = `${INVOICE_PREVIEW_WIDTH}px`;
     mount.style.background = "#ffffff";
     mount.style.zIndex = "-1";
     mount.innerHTML = previewHtml;
@@ -1167,7 +1207,7 @@ async function buildPdfFile() {
     mount.style.position = "fixed";
     mount.style.left = "-10000px";
     mount.style.top = "0";
-    mount.style.width = "860px";
+    mount.style.width = `${INVOICE_PREVIEW_WIDTH}px`;
     mount.style.background = "#ffffff";
     mount.style.zIndex = "-1";
     mount.innerHTML = previewHtml;
@@ -1742,14 +1782,30 @@ async function fileToBase64DataUrl(file) {
                     <Pill tone={draft.status}>{draft.status === "paid" ? "Paid" : draft.status === "sent" ? "Sent" : "Draft"}</Pill>
                   </div>
                 </div>
-                <div className="invPreviewInner">
-                  <iframe
-                    key={previewKey}
-                    ref={iframeRef}
-                    title="Invoice preview"
-                    className="invIframe"
-                    srcDoc={previewHtml}
-                  />
+                <div className="invPreviewInner" ref={previewBoxRef}>
+                  <div
+                    className="invPreviewStage"
+                    style={{
+                      width: Math.ceil(INVOICE_PREVIEW_WIDTH * previewScale),
+                      height: Math.ceil(previewHeight * previewScale),
+                    }}
+                  >
+                    <iframe
+                      key={previewKey}
+                      ref={iframeRef}
+                      title="Invoice preview"
+                      className="invIframe"
+                      srcDoc={previewHtml}
+                      onLoad={resizePreviewFrame}
+                      scrolling="no"
+                      style={{
+                        width: INVOICE_PREVIEW_WIDTH,
+                        height: previewHeight,
+                        transform: `scale(${previewScale})`,
+                        transformOrigin: "top left",
+                      }}
+                    />
+                  </div>
                 </div>
                 {sendModal ? (
   <div className="invSendOverlay" onClick={() => setSendModal(null)}>

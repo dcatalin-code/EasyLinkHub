@@ -21,6 +21,16 @@ function AuthOrb({ size = 420, top = 0, left = 0, opacity = 1, blur = 0, color =
   );
 }
 
+
+function getAuthRedirectUrl() {
+  if (typeof window === "undefined") return undefined;
+
+  const base = import.meta.env.BASE_URL || "/";
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+
+  return new URL(normalizedBase, window.location.origin).toString();
+}
+
 function EyeIcon({ open = false }) {
   return open ? (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -80,10 +90,13 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl(),
+          },
         });
 
         if (error) throw error;
-        setMessage("Account created. Check your email if confirmation is enabled.");
+        setMessage("Account created. Check your email and verify it, then you will return to this app.");
       }
     } catch (err) {
       setError(err.message || "Authentication failed.");

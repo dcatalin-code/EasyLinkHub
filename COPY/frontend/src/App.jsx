@@ -12,6 +12,7 @@ import LogoutButton from "./components/LogoutButton";
 
 import {
   ConfirmModal,
+  DEFAULT,
   ENABLETABSDEFAULT,
   IconCheck,
   IconSettings,
@@ -25,8 +26,8 @@ import {
   modalTitle,
   notificationTitleFor,
   parseISO,
-  safeLoad,
-  safeSave,
+  loadAccountState,
+  saveAccountState,
 } from "./shared/crmShared.jsx";
 
 function IconInvoice() {
@@ -164,7 +165,10 @@ function appLabel(key) {
 }
 
 export default function App({ access = null }) {
-  const [data, setData] = useState(safeLoad);
+  const [data, setData] = useState(DEFAULT);
+  const [accountLoading, setAccountLoading] = useState(true);
+  const [accountError, setAccountError] = useState(null);
+  const accountReadyRef = useRef(false);
   const [tab, setTab] = useState("clients");
   const [toast, setToast] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -260,8 +264,45 @@ export default function App({ access = null }) {
   }, [data.settings.theme]);
 
   useEffect(() => {
-    safeSave(data);
-  }, [data]);
+    let active = true;
+
+    async function loadAccountData() {
+      setAccountLoading(true);
+      setAccountError(null);
+      accountReadyRef.current = false;
+
+      try {
+        const loaded = await loadAccountState();
+        if (!active) return;
+        setData(loaded);
+        accountReadyRef.current = true;
+      } catch (err) {
+        if (!active) return;
+        accountReadyRef.current = false;
+        setAccountError(err?.message || "Failed to load account data");
+      } finally {
+        if (active) setAccountLoading(false);
+      }
+    }
+
+    loadAccountData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accountReadyRef.current || accountLoading || accountError) return;
+
+    const t = setTimeout(() => {
+      saveAccountState(data).catch((err) => {
+        setAccountError(err?.message || "Failed to save account data");
+      });
+    }, 450);
+
+    return () => clearTimeout(t);
+  }, [data, accountLoading, accountError]);
 
   useEffect(() => {
     if (!toast) return;
@@ -431,6 +472,33 @@ const pageTitle = useMemo(
   }, [data.reminders, data.tasks, data.calendarEvents]);
 
 
+
+  if (accountLoading) {
+    return (
+      <div className="app" style={{ gridTemplateColumns: "1fr", placeItems: "center" }}>
+        <div className="modalGlass" style={{ width: "min(460px, 100%)", padding: 24 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>Loading account data</h2>
+          <p style={{ color: "var(--muted)", marginBottom: 0 }}>Syncing your CRM workspace.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accountError) {
+    return (
+      <div className="app" style={{ gridTemplateColumns: "1fr", placeItems: "center" }}>
+        <div className="modalGlass" style={{ width: "min(620px, 100%)", padding: 24 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>Account storage is not ready</h2>
+          <p style={{ color: "var(--muted)", lineHeight: 1.6 }}>
+            {accountError}
+          </p>
+          <p style={{ color: "var(--muted)", lineHeight: 1.6, marginBottom: 0 }}>
+            Run the supplied Supabase SQL file once, then refresh the app.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   function QuickAddGrid() {
     const tileStyle = {
