@@ -346,8 +346,8 @@ const tabMetaAll = [
   { key: "budget", label: "budget", icon: IconWallet },
   { key: "goals", label: "goals", icon: IconTarget },
   { key: "invoices", label: "invoices", icon: IconInvoice },
-  { key: "settings", label: "settings", icon: IconSettings },
   { key: "notepad", label: "notepad", icon: IconCheck },
+  { key: "settings", label: "settings", icon: IconSettings },
 ];
 
 const tabMeta = tabMetaAll.filter((t) => enabled.includes(t.key));
